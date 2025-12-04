@@ -111,23 +111,184 @@ def create_tag():
 
 @app.route('/', methods=['GET'])
 def home():
-    """Root endpoint with instructions"""
-    return jsonify({
-        'message': 'Oura NFC Tag Creator Backend',
-        'endpoints': {
-            'POST /create-tag': 'Create a tag in Oura',
-            'GET /health': 'Health check'
-        },
-        'usage': {
-            'endpoint': 'POST /create-tag',
-            'body': {
-                'tag_type_code': 'workout (or: stress, poor_sleep, meditation, travel, sickness, recovery, etc)',
-                'start_time': '2025-12-03 (YYYY-MM-DD format)',
-                'end_time': '2025-12-03 (optional, defaults to start_time)',
-                'comment': 'Optional note'
+    """Root endpoint with HTML form"""
+    html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Oura NFC Tag Creator</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
             }
-        }
-    }), 200
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+            }
+            .container {
+                background: white;
+                border-radius: 20px;
+                padding: 30px;
+                max-width: 400px;
+                width: 100%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            }
+            h1 {
+                color: #333;
+                margin-bottom: 10px;
+                font-size: 24px;
+            }
+            p {
+                color: #666;
+                margin-bottom: 30px;
+                font-size: 14px;
+            }
+            .tag-buttons {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+            button {
+                padding: 12px;
+                border: none;
+                border-radius: 10px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                background: #f0f0f0;
+                color: #333;
+            }
+            button:hover {
+                background: #e0e0e0;
+                transform: translateY(-2px);
+            }
+            button.active {
+                background: #667eea;
+                color: white;
+            }
+            .create-btn {
+                width: 100%;
+                padding: 15px;
+                background: #667eea;
+                color: white;
+                font-size: 16px;
+                margin-top: 20px;
+                border-radius: 10px;
+            }
+            .create-btn:hover {
+                background: #5568d3;
+            }
+            .create-btn:disabled {
+                background: #ccc;
+                cursor: not-allowed;
+            }
+            .result {
+                margin-top: 20px;
+                padding: 15px;
+                border-radius: 10px;
+                display: none;
+            }
+            .result.success {
+                background: #d4edda;
+                color: #155724;
+                display: block;
+            }
+            .result.error {
+                background: #f8d7da;
+                color: #721c24;
+                display: block;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>📍 Oura Tag Creator</h1>
+            <p>Tap a tag type, then create</p>
+            
+            <div class="tag-buttons">
+                <button onclick="selectTag('workout')">Workout</button>
+                <button onclick="selectTag('stress')">Stress</button>
+                <button onclick="selectTag('poor_sleep')">Poor Sleep</button>
+                <button onclick="selectTag('meditation')">Meditation</button>
+                <button onclick="selectTag('recovery')">Recovery</button>
+                <button onclick="selectTag('travel')">Travel</button>
+                <button onclick="selectTag('sickness')">Sickness</button>
+                <button onclick="selectTag('menstruation')">Menstruation</button>
+            </div>
+            
+            <button class="create-btn" onclick="createTag()" id="createBtn" disabled>Create Tag</button>
+            
+            <div class="result" id="result"></div>
+        </div>
+        
+        <script>
+            let selectedTag = null;
+            
+            function selectTag(tag) {
+                selectedTag = tag;
+                // Update button styles
+                document.querySelectorAll('.tag-buttons button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                event.target.classList.add('active');
+                document.getElementById('createBtn').disabled = false;
+            }
+            
+            async function createTag() {
+                if (!selectedTag) {
+                    showResult('Please select a tag type', 'error');
+                    return;
+                }
+                
+                const today = new Date().toISOString().split('T')[0];
+                
+                try {
+                    const response = await fetch('/create-tag', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            tag_type_code: selectedTag,
+                            start_time: today,
+                            comment: 'Tagged via NFC'
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        showResult('✅ Tag created successfully!', 'success');
+                        document.getElementById('createBtn').disabled = true;
+                        selectedTag = null;
+                    } else {
+                        showResult('❌ Error: ' + data.error, 'error');
+                    }
+                } catch (error) {
+                    showResult('❌ Error: ' + error.message, 'error');
+                }
+            }
+            
+            function showResult(message, type) {
+                const resultDiv = document.getElementById('result');
+                resultDiv.textContent = message;
+                resultDiv.className = 'result ' + type;
+            }
+        </script>
+    </body>
+    </html>
+    """
+    return html, 200, {'Content-Type': 'text/html'}
 
 # Error handlers
 @app.errorhandler(404)
