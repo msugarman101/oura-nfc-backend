@@ -22,7 +22,7 @@ def health_check():
     """Simple health check endpoint"""
     return jsonify({'status': 'Backend is running!'}), 200
 
-@app.route('/create-tag', methods=['POST'])
+@app.route('/create-tag', methods=['POST', 'OPTIONS'])
 def create_tag():
     """
     Create a tag in Oura
@@ -35,6 +35,14 @@ def create_tag():
         "comment": "My comment"       # Optional: add a note
     }
     """
+    # Handle CORS preflight
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        return response, 200
+    
     try:
         data = request.get_json()
         
