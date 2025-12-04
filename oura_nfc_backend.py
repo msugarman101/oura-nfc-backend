@@ -15,7 +15,7 @@ app = Flask(__name__)
 OURA_TOKEN = os.getenv('OURA_TOKEN', 'YOUR_OURA_TOKEN_HERE')
 
 # Oura API endpoint for creating tags
-OURA_API_URL = 'https://api.ouraring.com/v2/usercollection/enhanced_tag'
+OURA_API_URL = 'https://api.ouraring.com/v2/usercollection/daily_tags'
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -91,14 +91,20 @@ def create_tag():
                 'data': response.json()
             }), 201
         else:
-            error_details = response.json() if response.text else 'No additional details'
+            error_details = response.text
+            try:
+                error_json = response.json()
+                error_details = error_json
+            except:
+                pass
             print(f"Oura API Error: {response.status_code}")
-            print(f"Response: {error_details}")
+            print(f"Full Response: {error_details}")
+            print(f"Request payload was: {payload}")
             return jsonify({
                 'error': 'Failed to create tag in Oura',
                 'status_code': response.status_code,
-                'details': error_details,
-                'oura_error': error_details.get('error_description', '') if isinstance(error_details, dict) else ''
+                'oura_response': str(error_details),
+                'request_sent': str(payload)
             }), response.status_code
     
     except requests.exceptions.RequestException as e:
