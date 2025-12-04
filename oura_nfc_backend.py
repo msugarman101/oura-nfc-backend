@@ -14,8 +14,8 @@ app = Flask(__name__)
 # Replace this with your actual token from https://cloud.ouraring.com/personal-access-tokens
 OURA_TOKEN = os.getenv('OURA_TOKEN', 'YOUR_OURA_TOKEN_HERE')
 
-# Oura API endpoint
-OURA_API_URL = 'https://api.ouraring.com/v2/usercollection/daily_tags'
+# Oura API endpoint for creating tags
+OURA_API_URL = 'https://api.ouraring.com/v2/usercollection/enhanced_tag'
 
 @app.route('/health', methods=['GET'])
 def health_check():
