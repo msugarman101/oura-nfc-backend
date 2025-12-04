@@ -91,10 +91,14 @@ def create_tag():
                 'data': response.json()
             }), 201
         else:
+            error_details = response.json() if response.text else 'No additional details'
+            print(f"Oura API Error: {response.status_code}")
+            print(f"Response: {error_details}")
             return jsonify({
                 'error': 'Failed to create tag in Oura',
                 'status_code': response.status_code,
-                'details': response.json() if response.text else 'No additional details'
+                'details': error_details,
+                'oura_error': error_details.get('error_description', '') if isinstance(error_details, dict) else ''
             }), response.status_code
     
     except requests.exceptions.RequestException as e:
